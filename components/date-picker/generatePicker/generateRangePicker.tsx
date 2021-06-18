@@ -35,20 +35,8 @@ export default function generateRangePicker<DateType>(
       }
     };
 
-    getDefaultLocale = () => {
-      const { locale } = this.props;
-      const result = {
-        ...enUS,
-        ...locale,
-      };
-      result.lang = {
-        ...result.lang,
-        ...((locale || {}) as PickerLocale).lang,
-      };
-      return result;
-    };
-
-    renderPicker = (locale: PickerLocale) => {
+    renderPicker = (contextLocale: PickerLocale) => {
+      const locale = { ...contextLocale, ...this.props.locale };
       const { getPrefixCls, direction, getPopupContainer } = this.context;
       const {
         prefixCls: customizePrefixCls,
@@ -69,6 +57,7 @@ export default function generateRangePicker<DateType>(
         ...(showTime ? getTimeProps({ format, picker, ...showTime }) : {}),
         ...(picker === 'time' ? getTimeProps({ format, ...this.props, picker }) : {}),
       };
+      const rootPrefixCls = getPrefixCls();
 
       return (
         <SizeContext.Consumer>
@@ -87,7 +76,7 @@ export default function generateRangePicker<DateType>(
                 suffixIcon={picker === 'time' ? <ClockCircleOutlined /> : <CalendarOutlined />}
                 clearIcon={<CloseCircleFilled />}
                 allowClear
-                transitionName="slide-up"
+                transitionName={`${rootPrefixCls}-slide-up`}
                 {...restProps}
                 {...additionalOverrideProps}
                 className={classNames(
@@ -116,7 +105,7 @@ export default function generateRangePicker<DateType>(
 
     render() {
       return (
-        <LocaleReceiver componentName="DatePicker" defaultLocale={this.getDefaultLocale}>
+        <LocaleReceiver componentName="DatePicker" defaultLocale={enUS}>
           {this.renderPicker}
         </LocaleReceiver>
       );

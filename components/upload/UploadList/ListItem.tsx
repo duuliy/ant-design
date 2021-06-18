@@ -6,6 +6,8 @@ import DeleteOutlined from '@ant-design/icons/DeleteOutlined';
 import DownloadOutlined from '@ant-design/icons/DownloadOutlined';
 import Tooltip from '../../tooltip';
 import Progress from '../../progress';
+import { ConfigContext } from '../../config-provider';
+
 import {
   ItemRender,
   UploadFile,
@@ -228,13 +230,19 @@ const ListItem = React.forwardRef(
         {preview}
       </span>
     );
+    const { getPrefixCls } = React.useContext(ConfigContext);
+    const rootPrefixCls = getPrefixCls();
 
     const dom = (
       <div className={infoUploadingClass}>
         <div className={`${prefixCls}-list-item-info`}>{iconAndPreview}</div>
         {actions}
         {showProgress && (
-          <CSSMotion motionName="fade" visible={file.status === 'uploading'}>
+          <CSSMotion
+            motionName={`${rootPrefixCls}-fade`}
+            visible={file.status === 'uploading'}
+            motionDeadline={2000}
+          >
             {({ className: motionClassName }) => {
               // show loading icon if upload progress listener is disabled
               const loadingProgress =
@@ -264,7 +272,13 @@ const ListItem = React.forwardRef(
 
     return (
       <div className={listContainerNameClass} style={style} ref={ref}>
-        {itemRender ? itemRender(item, file, items) : item}
+        {itemRender
+          ? itemRender(item, file, items, {
+              download: onDownload.bind(null, file),
+              preview: onPreview.bind(null, file),
+              remove: onClose.bind(null, file),
+            })
+          : item}
       </div>
     );
   },

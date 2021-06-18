@@ -82,28 +82,32 @@ cover: https://gw.alipayobjects.com/zos/alicdn/_0XzgOis7/Select.svg
 
 ### Select Methods
 
-| 名称    | 说明     | 版本 |
-| ------- | -------- | ---- |
-| blur()  | 取消焦点 |      |
-| focus() | 获取焦点 |      |
+| 名称 | 说明 | 版本 |
+| --- | --- | --- |
+| blur() | 取消焦点 |  |
+| focus() | 获取焦点 |  |
 
 ### Option props
 
-| 参数      | 说明                              | 类型             | 默认值 | 版本 |
-| --------- | --------------------------------- | ---------------- | ------ | ---- |
-| className | Option 器类名                     | string           | -      |      |
-| disabled  | 是否禁用                          | boolean          | false  |      |
-| title     | 选中该 Option 后，Select 的 title | string           | -      |      |
-| value     | 默认根据此属性值进行筛选          | string \| number | -      |      |
+| 参数 | 说明 | 类型 | 默认值 | 版本 |
+| --- | --- | --- | --- | --- |
+| className | Option 器类名 | string | - |  |
+| disabled | 是否禁用 | boolean | false |  |
+| title | 选中该 Option 后，Select 的 title | string | - |  |
+| value | 默认根据此属性值进行筛选 | string \| number | - |  |
 
 ### OptGroup props
 
-| 参数  | 说明 | 类型                    | 默认值 | 版本 |
-| ----- | ---- | ----------------------- | ------ | ---- |
-| key   | Key  | string                  | -      |      |
-| label | 组名 | string \| React.Element | -      |      |
+| 参数 | 说明 | 类型 | 默认值 | 版本 |
+| --- | --- | --- | --- | --- |
+| key | Key | string | - |  |
+| label | 组名 | string \| React.Element | - |  |
 
 ## FAQ
+
+### `tag` 模式下为何搜索有时会出现两个相同选项？
+
+这一般是 `options` 中的 `label` 和 `value` 不同导致的，你可以通过 `optionFilterProp="label"` 将过滤设置为展示值以避免这种情况。
 
 ### 点击 `dropdownRender` 里的内容浮层关闭怎么办？
 

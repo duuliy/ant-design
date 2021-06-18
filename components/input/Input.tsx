@@ -61,30 +61,47 @@ export function fixControlledValue<T>(value: T) {
   return value;
 }
 
-export function resolveOnChange(
-  target: HTMLInputElement | HTMLTextAreaElement,
+export function resolveOnChange<E extends HTMLInputElement | HTMLTextAreaElement>(
+  target: E,
   e:
-    | React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
-    | React.MouseEvent<HTMLElement, MouseEvent>,
-  onChange?: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void,
+    | React.ChangeEvent<E>
+    | React.MouseEvent<HTMLElement, MouseEvent>
+    | React.CompositionEvent<HTMLElement>,
+  onChange:
+    | undefined
+    | ((event: React.ChangeEvent<E>) => void),
+  targetValue?: string,
 ) {
-  if (onChange) {
-    let event = e;
-    if (e.type === 'click') {
-      // click clear icon
-      event = Object.create(e);
-      event.target = target;
-      event.currentTarget = target;
-      const originalInputValue = target.value;
-      // change target ref value cause e.target.value should be '' when clear input
-      target.value = '';
-      onChange(event as React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>);
-      // reset target ref value
-      target.value = originalInputValue;
-      return;
-    }
-    onChange(event as React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>);
+  if (!onChange) {
+    return;
   }
+  let event = e;
+  const originalInputValue = target.value;
+
+  if (e.type === 'click') {
+    // click clear icon
+    event = Object.create(e);
+    event.target = target;
+    event.currentTarget = target;
+    // change target ref value cause e.target.value should be '' when clear input
+    target.value = '';
+    onChange(event as React.ChangeEvent<E>);
+    // reset target ref value
+    target.value = originalInputValue;
+    return;
+  }
+
+  // Trigger by composition event, this means we need force change the input value
+  if (targetValue !== undefined) {
+    event = Object.create(e);
+    event.target = target;
+    event.currentTarget = target;
+
+    target.value = targetValue;
+    onChange(event as React.ChangeEvent<E>);
+    return;
+  }
+  onChange(event as React.ChangeEvent<E>);
 }
 
 export function getInputClassName(
@@ -151,11 +168,11 @@ class Input extends React.Component<InputProps, InputState> {
     type: 'text',
   };
 
-  input: HTMLInputElement;
+  input!: HTMLInputElement;
 
-  clearableInput: ClearableLabeledInput;
+  clearableInput!: ClearableLabeledInput;
 
-  removePasswordTimeout: number;
+  removePasswordTimeout: any;
 
   direction: DirectionType = 'ltr';
 
@@ -230,17 +247,13 @@ class Input extends React.Component<InputProps, InputState> {
   onFocus: React.FocusEventHandler<HTMLInputElement> = e => {
     const { onFocus } = this.props;
     this.setState({ focused: true }, this.clearPasswordValueAttribute);
-    if (onFocus) {
-      onFocus(e);
-    }
+    onFocus?.(e);
   };
 
   onBlur: React.FocusEventHandler<HTMLInputElement> = e => {
     const { onBlur } = this.props;
     this.setState({ focused: false }, this.clearPasswordValueAttribute);
-    if (onBlur) {
-      onBlur(e);
-    }
+    onBlur?.(e);
   };
 
   setValue(value: string, callback?: () => void) {
@@ -320,12 +333,10 @@ class Input extends React.Component<InputProps, InputState> {
 
   handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const { onPressEnter, onKeyDown } = this.props;
-    if (e.keyCode === 13 && onPressEnter) {
+    if (onPressEnter && e.keyCode === 13) {
       onPressEnter(e);
     }
-    if (onKeyDown) {
-      onKeyDown(e);
-    }
+    onKeyDown?.(e);
   };
 
   renderComponent = ({ getPrefixCls, direction, input }: ConfigConsumerProps) => {

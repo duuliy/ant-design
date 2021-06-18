@@ -79,6 +79,7 @@ export default function useSelection<RecordType>(
   const {
     preserveSelectedRowKeys,
     selectedRowKeys,
+    defaultSelectedRowKeys,
     getCheckboxProps,
     onChange: onSelectionChange,
     onSelect,
@@ -112,15 +113,18 @@ export default function useSelection<RecordType>(
   const preserveRecordsRef = React.useRef(new Map<Key, RecordType>());
 
   // ========================= Keys =========================
-  const [mergedSelectedKeys, setMergedSelectedKeys] = useMergedState(selectedRowKeys || [], {
-    value: selectedRowKeys,
-  });
+  const [mergedSelectedKeys, setMergedSelectedKeys] = useMergedState(
+    selectedRowKeys || defaultSelectedRowKeys || [],
+    {
+      value: selectedRowKeys,
+    },
+  );
 
   const { keyEntities } = useMemo(
     () =>
       checkStrictly
         ? { keyEntities: null }
-        : convertDataToEntities((data as unknown) as DataNode[], {
+        : convertDataToEntities(data as unknown as DataNode[], {
             externalGetKey: getRowKey as any,
             childrenPropName: childrenColumnName,
           }),
@@ -128,10 +132,10 @@ export default function useSelection<RecordType>(
   );
 
   // Get flatten data
-  const flattedData = useMemo(() => flattenData(pageData, childrenColumnName), [
-    pageData,
-    childrenColumnName,
-  ]);
+  const flattedData = useMemo(
+    () => flattenData(pageData, childrenColumnName),
+    [pageData, childrenColumnName],
+  );
 
   // Get all checkbox props
   const checkboxPropsMap = useMemo(() => {
@@ -231,9 +235,7 @@ export default function useSelection<RecordType>(
 
       setMergedSelectedKeys(availableKeys);
 
-      if (onSelectionChange) {
-        onSelectionChange(availableKeys, records);
-      }
+      onSelectionChange?.(availableKeys, records);
     },
     [setMergedSelectedKeys, getRecordByKey, onSelectionChange, preserveSelectedRowKeys],
   );
@@ -305,10 +307,7 @@ export default function useSelection<RecordType>(
           key: 'none',
           text: tableLocale.selectNone,
           onSelect() {
-            if (onSelectNone) {
-              onSelectNone();
-            }
-
+            onSelectNone?.();
             setSelectedKeys([]);
           },
         };
@@ -353,13 +352,11 @@ export default function useSelection<RecordType>(
 
         const keys = Array.from(keySet);
 
-        if (onSelectAll) {
-          onSelectAll(
-            !checkedCurrentAll,
-            keys.map(k => getRecordByKey(k)),
-            changeKeys.map(k => getRecordByKey(k)),
-          );
-        }
+        onSelectAll?.(
+          !checkedCurrentAll,
+          keys.map(k => getRecordByKey(k)),
+          changeKeys.map(k => getRecordByKey(k)),
+        );
 
         setSelectedKeys(keys);
       };
@@ -378,9 +375,7 @@ export default function useSelection<RecordType>(
                   <Menu.Item
                     key={key || index}
                     onClick={() => {
-                      if (onSelectionClick) {
-                        onSelectionClick(recordKeys);
-                      }
+                      onSelectionClick?.(recordKeys);
                     }}
                   >
                     {text}
@@ -400,17 +395,33 @@ export default function useSelection<RecordType>(
           );
         }
 
-        const allDisabled = flattedData.every((record, index) => {
-          const key = getRowKey(record, index);
-          const checkboxProps = checkboxPropsMap.get(key) || {};
-          return checkboxProps.disabled;
-        });
+        const allDisabledData = flattedData
+          .map((record, index) => {
+            const key = getRowKey(record, index);
+            const checkboxProps = checkboxPropsMap.get(key) || {};
+            return { checked: keySet.has(key), ...checkboxProps };
+          })
+          .filter(({ disabled }) => disabled);
+
+        const allDisabled =
+          !!allDisabledData.length && allDisabledData.length === flattedData.length;
+
+        const allDisabledAndChecked =
+          allDisabled && allDisabledData.every(({ checked }) => checked);
+        const allDisabledSomeChecked =
+          allDisabled && allDisabledData.some(({ checked }) => checked);
 
         title = !hideSelectAll && (
           <div className={`${prefixCls}-selection`}>
             <Checkbox
-              checked={!allDisabled && !!flattedData.length && checkedCurrentAll}
-              indeterminate={!checkedCurrentAll && checkedCurrentSome}
+              checked={
+                !allDisabled ? !!flattedData.length && checkedCurrentAll : allDisabledAndChecked
+              }
+              indeterminate={
+                !allDisabled
+                  ? !checkedCurrentAll && checkedCurrentSome
+                  : !allDisabledAndChecked && allDisabledSomeChecked
+              }
               onChange={onSelectAllChange}
               disabled={flattedData.length === 0 || allDisabled}
               skipGroup
@@ -457,7 +468,7 @@ export default function useSelection<RecordType>(
           if (expandType === 'nest') {
             mergedIndeterminate = indeterminate;
             devWarning(
-              !(typeof checkboxProps?.indeterminate === 'boolean'),
+              typeof checkboxProps?.indeterminate !== 'boolean',
               'Table',
               'set `indeterminate` using `rowSelection.getCheckboxProps` is not allowed with tree structured dataSource.',
             );
@@ -519,13 +530,11 @@ export default function useSelection<RecordType>(
                     }
 
                     const keys = Array.from(keySet);
-                    if (onSelectMultiple) {
-                      onSelectMultiple(
-                        !checked,
-                        keys.map(recordKey => getRecordByKey(recordKey)),
-                        changedKeys.map(recordKey => getRecordByKey(recordKey)),
-                      );
-                    }
+                    onSelectMultiple?.(
+                      !checked,
+                      keys.map(recordKey => getRecordByKey(recordKey)),
+                      changedKeys.map(recordKey => getRecordByKey(recordKey)),
+                    );
 
                     setSelectedKeys(keys);
                   } else {

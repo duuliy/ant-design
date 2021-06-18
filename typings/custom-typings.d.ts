@@ -34,8 +34,6 @@ declare module 'rc-tabs*';
 
 declare module 'rc-tree/lib/util';
 
-declare module 'rc-input-number';
-
 declare module 'rc-collapse';
 
 declare module 'rc-dialog';
@@ -53,3 +51,12 @@ declare module '*.json' {
   export const version: string;
   export default value;
 }
+
+declare module '@docsearch/react/style/modal';
+
+declare module '@docsearch/react/modal' {
+  import { DocSearchModal as value } from '@docsearch/react';
+  export const DocSearchModal = value;
+}
+
+declare module 'docsearch.js';
